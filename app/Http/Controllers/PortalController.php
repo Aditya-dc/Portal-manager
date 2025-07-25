@@ -36,7 +36,7 @@ class PortalController extends Controller
             $query->where('status', $request->status);
         }
 
-        $portals = $query->paginate(15);
+        $portals = $query->paginate(10);
         $servers = Server::all();
         
         return view('portals.index', compact('portals', 'servers'));

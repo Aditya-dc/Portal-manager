@@ -8,7 +8,7 @@ class ServerController extends Controller
 {
     public function index()
     {
-        $servers = Server::with('portals')->paginate(15);
+        $servers = Server::with('portals')->paginate(10);
         return view('servers.index', compact('servers'));
     }
 

@@ -9,8 +9,22 @@
                 <i class="fas fa-sync-alt"></i> Check All Status
             </button>
         </div>
-    </div>
+        </div>
 </div>
+
+<!-- Search Bar -->
+<form method="GET" action="{{ route('dashboard') }}" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control"
+               placeholder="Search server or portal name..." value="{{ $searchTerm ?? '' }}">
+        <button class="btn btn-primary" type="submit">
+            <i class="fas fa-search"></i> Search
+        </button>
+        @if(!empty($searchTerm))
+            <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">Clear</a>
+        @endif
+    </div>
+</form>
 
 <!-- Statistics Cards -->
 <div class="row mb-4">
@@ -101,92 +115,180 @@
     </div>
 </div>
 
-<!-- Servers and Portals Overview -->
-@if($servers->count() > 0)
-    @foreach($servers as $server)
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="fas fa-server"></i> {{ $server->name }}
-                <span class="badge bg-secondary">{{ $server->portals->count() }} portals</span>
-            </h5>
-            <div>
-                <small class="text-muted">{{ $server->portals->where('status', 'up')->count() }} active</small>
-                <span class="badge bg-info">{{ ucfirst($server->type) }}</span>
-                <span class="badge {{ $server->exposed == 'external' ? 'bg-warning' : 'bg-success' }}">
-                    {{ ucfirst($server->exposed) }}
-                </span>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="row mb-2">
-                <div class="col-md-6">
-                    <small><strong>IP:</strong> {{ $server->ip }}</small>
-                </div>
-                <div class="col-md-6">
-                    <small><strong>Type:</strong> {{ ucfirst($server->type) }}</small>
+<!-- Main Dashboard Logic with Pagination -->
+@if(!$searchTerm)
+    @if($servers->count() > 0)
+        @foreach($servers as $server)
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-server"></i> {{ $server->name }}
+                    <span class="badge bg-secondary">{{ $server->portals->count() }} portals</span>
+                </h5>
+                <div>
+                    <small class="text-muted">{{ $server->portals->where('status', 'up')->count() }} active</small>
+                    <span class="badge bg-info">{{ ucfirst($server->type) }}</span>
+                    <span class="badge {{ $server->exposed == 'external' ? 'bg-warning' : 'bg-success' }}">
+                        {{ ucfirst($server->exposed) }}
+                    </span>
                 </div>
             </div>
-            
-            @if($server->portals->count() > 0)
-                <div class="row">
-                    @foreach($server->portals as $portal)
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card portal-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title mb-0">{{ $portal->name }}</h6>
-                                    <span class="badge {{ $portal->status == 'up' ? 'badge-success' : 'badge-danger' }}">
-                                        {{ ucfirst($portal->status) }}
-                                    </span>
-                                </div>
-                                <p class="card-text small text-muted mb-2">
-                                    <i class="fas fa-link"></i> 
-                                    <a href="{{ $portal->url }}" target="_blank">{{ Str::limit($portal->url, 30) }}</a>
-                                </p>
-                                <div class="row text-sm">
-                                    <div class="col-12">
-                                        <small><strong>Developer:</strong> {{ $portal->developed_by }}</small>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <small><strong>IP:</strong> {{ $server->ip }}</small>
+                    </div>
+                    <div class="col-md-6">
+                        <small><strong>Type:</strong> {{ ucfirst($server->type) }}</small>
+                    </div>
+                </div>
+                @if($server->portals->count() > 0)
+                    <div class="row">
+                        @foreach($server->portals as $portal)
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card portal-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ $portal->name }}</h6>
+                                        <span class="badge {{ $portal->status == 'up' ? 'badge-success' : 'badge-danger' }}">
+                                            {{ ucfirst($portal->status) }}
+                                        </span>
                                     </div>
-                                    <div class="col-6">
-                                        <small><strong>VAPT:</strong> {{ $portal->vapt ? 'Yes' : 'No' }}</small>
+                                    <p class="card-text small text-muted mb-2">
+                                        <i class="fas fa-link"></i> 
+                                        <a href="{{ $portal->url }}" target="_blank">{{ Str::limit($portal->url, 30) }}</a>
+                                    </p>
+                                    <div class="row text-sm">
+                                        <div class="col-12">
+                                            <small><strong>Developer:</strong> {{ $portal->developed_by }}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><strong>VAPT:</strong> {{ $portal->vapt ? 'Yes' : 'No' }}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><strong>Backup:</strong> {{ $portal->backup ? 'Yes' : 'No' }}</small>
+                                        </div>
                                     </div>
-                                    <div class="col-6">
-                                        <small><strong>Backup:</strong> {{ $portal->backup ? 'Yes' : 'No' }}</small>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <div class="btn-group btn-group-sm w-100">
-                                        <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info">
-                                            <i class="fas fa-sync-alt"></i>
-                                        </button>
+                                    <div class="mt-2">
+                                        <div class="btn-group btn-group-sm w-100">
+                                            <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        @endforeach
                     </div>
-                    @endforeach
+                @else
+                    <p class="text-muted">No portals found for this server.</p>
+                @endif
+            </div>
+        </div>
+        @endforeach
+        <div class="d-flex justify-content-center mt-4">
+            {{ $servers->onEachSide(1)->links() }}
+        </div>
+    @else
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-server fa-3x text-muted mb-3"></i>
+                <h5>No Servers Found</h5>
+                <p class="text-muted">Get started by adding your first server.</p>
+                <a href="{{ route('servers.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Your First Server
+                </a>
+            </div>
+        </div>
+    @endif
+
+@elseif($servers->count() > 0)
+    @foreach($servers as $server)
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-server"></i> {{ $server->name }}
+                    <span class="badge bg-secondary">{{ $server->portals->count() }} portals</span>
+                </h5>
+                <div>
+                    <small class="text-muted">{{ $server->portals->where('status', 'up')->count() }} active</small>
+                    <span class="badge bg-info">{{ ucfirst($server->type) }}</span>
+                    <span class="badge {{ $server->exposed == 'external' ? 'bg-warning' : 'bg-success' }}">
+                        {{ ucfirst($server->exposed) }}
+                    </span>
                 </div>
-            @else
-                <p class="text-muted">No portals found for this server.</p>
-            @endif
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <small><strong>IP:</strong> {{ $server->ip }}</small>
+                    </div>
+                    <div class="col-md-6">
+                        <small><strong>Type:</strong> {{ ucfirst($server->type) }}</small>
+                    </div>
+                </div>
+                @if($server->portals->count() > 0)
+                    <div class="row">
+                        @foreach($server->portals as $portal)
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card portal-card @if($foundType=='portal' && $portal->id == $matchedPortalId) border border-3 border-warning @endif">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ $portal->name }}</h6>
+                                        <span class="badge {{ $portal->status == 'up' ? 'badge-success' : 'badge-danger' }}">
+                                            {{ ucfirst($portal->status) }}
+                                        </span>
+                                    </div>
+                                    <p class="card-text small text-muted mb-2">
+                                        <i class="fas fa-link"></i> 
+                                        <a href="{{ $portal->url }}" target="_blank">{{ Str::limit($portal->url, 30) }}</a>
+                                    </p>
+                                    <div class="row text-sm">
+                                        <div class="col-12">
+                                            <small><strong>Developer:</strong> {{ $portal->developed_by }}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><strong>VAPT:</strong> {{ $portal->vapt ? 'Yes' : 'No' }}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><strong>Backup:</strong> {{ $portal->backup ? 'Yes' : 'No' }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <div class="btn-group btn-group-sm w-100">
+                                            <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    @if($foundType == 'portal' && $portal->id == $matchedPortalId)
+                                        <div class="mt-2">
+                                            <span class="badge bg-warning text-dark">Matched Portal</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted">No portals found for this server.</p>
+                @endif
+            </div>
         </div>
-    </div>
     @endforeach
-@else
-    <div class="card">
-        <div class="card-body text-center">
-            <i class="fas fa-server fa-3x text-muted mb-3"></i>
-            <h5>No Servers Found</h5>
-            <p class="text-muted">Get started by adding your first server.</p>
-            <a href="{{ route('servers.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Add Your First Server
-            </a>
-        </div>
+    <div class="d-flex justify-content-center mt-4">
+        {{ $servers->onEachSide(1)->appends(['search' => $searchTerm])->links() }}
     </div>
+@else
+    <div class="alert alert-warning my-5">No server or portal found for "{{ $searchTerm }}".</div>
 @endif
 @endsection
 
