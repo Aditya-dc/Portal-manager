@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Portal extends Model
 {
@@ -34,4 +35,18 @@ class Portal extends Model
     {
         return $this->status === 'up' ? 'badge-success' : 'badge-danger';
     }
+    public function assignedUsers()
+{
+    return $this->belongsToMany(User::class, 'user_portal_assignments');
+}
+
+public function scopeForUser($query, User $user)
+{
+    if ($user->isSuperAdmin()) {
+        return $query;
+    }
+    return $query->whereHas('assignedUsers', function($q) use ($user) {
+        $q->where('user_id', $user->id);
+    });
+}
 }

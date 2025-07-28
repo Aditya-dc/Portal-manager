@@ -5,18 +5,19 @@
     <h1 class="h2">Dashboard</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="checkAllPortals()">
-                <i class="fas fa-sync-alt"></i> Check All Status
-            </button>
+            @if(auth()->user()->canModify())
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="checkAllPortals()">
+                    <i class="fas fa-sync-alt"></i> Check All Status
+                </button>
+            @endif
         </div>
-        </div>
+    </div>
 </div>
 
-<!-- Search Bar -->
 <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
     <div class="input-group">
         <input type="text" name="search" class="form-control"
-               placeholder="Search server or portal name..." value="{{ $searchTerm ?? '' }}">
+               placeholder="Search server IP or portal name..." value="{{ $searchTerm ?? '' }}">
         <button class="btn btn-primary" type="submit">
             <i class="fas fa-search"></i> Search
         </button>
@@ -26,7 +27,6 @@
     </div>
 </form>
 
-<!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6">
         <div class="card bg-primary text-white mb-4">
@@ -34,7 +34,13 @@
                 <div class="d-flex justify-content-between">
                     <div>
                         <div class="h4">{{ $stats['total_servers'] }}</div>
-                        <div>Total Servers</div>
+                        <div>
+                            @if(auth()->user()->isSuperAdmin())
+                                Total Servers
+                            @else
+                                Assigned Servers
+                            @endif
+                        </div>
                     </div>
                     <div class="align-self-center">
                         <i class="fas fa-server fa-2x"></i>
@@ -79,7 +85,13 @@
                 <div class="d-flex justify-content-between">
                     <div>
                         <div class="h4">{{ $stats['total_portals'] }}</div>
-                        <div>Total Portals</div>
+                        <div>
+                            @if(auth()->user()->isSuperAdmin())
+                                Total Portals
+                            @else
+                                Assigned Portals
+                            @endif
+                        </div>
                     </div>
                     <div class="align-self-center">
                         <i class="fas fa-globe fa-2x"></i>
@@ -90,19 +102,21 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Quick Actions</h5>
                 <div class="btn-group" role="group">
-                    <a href="{{ route('servers.create') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-plus"></i> Add Server
-                    </a>
-                    <a href="{{ route('portals.create') }}" class="btn btn-outline-success">
-                        <i class="fas fa-plus"></i> Add Portal
-                    </a>
+                    @if(auth()->user()->canModify())
+                        <a href="{{ route('servers.create') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus"></i> Add Server
+                        </a>
+                        <a href="{{ route('portals.create') }}" class="btn btn-outline-success">
+                            <i class="fas fa-plus"></i> Add Portal
+                        </a>
+                    @endif
+                    
                     <a href="{{ route('servers.index') }}" class="btn btn-outline-info">
                         <i class="fas fa-list"></i> View All Servers
                     </a>
@@ -115,14 +129,13 @@
     </div>
 </div>
 
-<!-- Main Dashboard Logic with Pagination -->
 @if(!$searchTerm)
     @if($servers->count() > 0)
         @foreach($servers as $server)
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="fas fa-server"></i> {{ $server->name }}
+                    <i class="fas fa-server"></i> {{ $server->ip }}
                     <span class="badge bg-secondary">{{ $server->portals->count() }} portals</span>
                 </h5>
                 <div>
@@ -169,16 +182,18 @@
                                             <small><strong>Backup:</strong> {{ $portal->backup ? 'Yes' : 'No' }}</small>
                                         </div>
                                     </div>
-                                    <div class="mt-2">
-                                        <div class="btn-group btn-group-sm w-100">
-                                            <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info">
-                                                <i class="fas fa-sync-alt"></i>
-                                            </button>
+                                    @if(auth()->user()->canModify())
+                                        <div class="mt-2">
+                                            <div class="btn-group btn-group-sm w-100">
+                                                <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info">
+                                                    <i class="fas fa-sync-alt"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -198,10 +213,18 @@
             <div class="card-body text-center">
                 <i class="fas fa-server fa-3x text-muted mb-3"></i>
                 <h5>No Servers Found</h5>
-                <p class="text-muted">Get started by adding your first server.</p>
-                <a href="{{ route('servers.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add Your First Server
-                </a>
+                <p class="text-muted">
+                    @if(auth()->user()->isSuperAdmin())
+                        Get started by adding your first server.
+                    @else
+                        No servers have been assigned to you yet.
+                    @endif
+                </p>
+                @if(auth()->user()->canModify())
+                    <a href="{{ route('servers.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Your First Server
+                    </a>
+                @endif
             </div>
         </div>
     @endif
@@ -211,7 +234,7 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="fas fa-server"></i> {{ $server->name }}
+                    <i class="fas fa-server"></i> {{ $server->ip }}
                     <span class="badge bg-secondary">{{ $server->portals->count() }} portals</span>
                 </h5>
                 <div>
@@ -258,16 +281,18 @@
                                             <small><strong>Backup:</strong> {{ $portal->backup ? 'Yes' : 'No' }}</small>
                                         </div>
                                     </div>
-                                    <div class="mt-2">
-                                        <div class="btn-group btn-group-sm w-100">
-                                            <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info">
-                                                <i class="fas fa-sync-alt"></i>
-                                            </button>
+                                    @if(auth()->user()->canModify())
+                                        <div class="mt-2">
+                                            <div class="btn-group btn-group-sm w-100">
+                                                <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info">
+                                                    <i class="fas fa-sync-alt"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    @endif
                                     @if($foundType == 'portal' && $portal->id == $matchedPortalId)
                                         <div class="mt-2">
                                             <span class="badge bg-warning text-dark">Matched Portal</span>

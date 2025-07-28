@@ -10,10 +10,6 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn(['email_verified_at', 'remember_token']);
             
-            // If you have a role column, drop it too
-            if (Schema::hasColumn('users', 'role')) {
-                $table->dropColumn('role');
-            }
         });
     }
 

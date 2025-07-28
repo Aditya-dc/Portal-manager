@@ -12,14 +12,19 @@ class PortalsExport implements FromCollection, WithHeadings, WithMapping, WithSt
 {
     public function collection()
     {
-        return Portal::with('server')->get();
+        $user = auth()->user();
+        
+        if ($user->isSuperAdmin()) {
+            return Portal::with('server')->get();
+        } else {
+            return $user->assignedPortals()->with('server')->get();
+        }
     }
 
     public function headings(): array
     {
         return [
             'Portal ID',
-            'Server Name',
             'Portal Name',
             'URL',
             'Developed By',
@@ -39,7 +44,6 @@ class PortalsExport implements FromCollection, WithHeadings, WithMapping, WithSt
     {
         return [
             $portal->id,
-            $portal->server->name,
             $portal->name,
             $portal->url,
             $portal->developed_by,
@@ -47,9 +51,9 @@ class PortalsExport implements FromCollection, WithHeadings, WithMapping, WithSt
             $portal->backup ? 'Yes' : 'No',
             ucfirst($portal->status),
             $portal->last_checked ? $portal->last_checked->format('Y-m-d H:i:s') : 'Never',
-            $portal->server->ip,
-            ucfirst($portal->server->type),
-            ucfirst($portal->server->exposed),
+            $portal->server ? $portal->server->ip : 'N/A',
+            $portal->server ? ucfirst($portal->server->type) : 'N/A',
+            $portal->server ? ucfirst($portal->server->exposed) : 'N/A',
             $portal->created_at->format('Y-m-d H:i:s'),
             $portal->updated_at->format('Y-m-d H:i:s')
         ];
@@ -58,7 +62,6 @@ class PortalsExport implements FromCollection, WithHeadings, WithMapping, WithSt
     public function styles(Worksheet $sheet)
     {
         return [
-            // Style the first row 
             1 => ['font' => ['bold' => true, 'size' => 12]],
         ];
     }

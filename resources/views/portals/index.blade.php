@@ -5,12 +5,15 @@
     <h1 class="h2">Portals Management</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <a href="{{ route('portals.create') }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus"></i> Add Portal
-            </a>
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="checkAllPortals()">
-                <i class="fas fa-sync-alt"></i> Check All Status
-            </button>
+            ]
+            @if(auth()->user()->canModify())
+                <a href="{{ route('portals.create') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Add Portal
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="checkAllPortals()">
+                    <i class="fas fa-sync-alt"></i> Check All Status
+                </button>
+            @endif
         </div>
         <div class="btn-group">
             <button type="button" class="btn btn-sm btn-success dropdown-toggle" data-bs-toggle="dropdown">
@@ -18,25 +21,30 @@
             </button>
             <ul class="dropdown-menu">
                 <li>
+                    {{-- Export available to ALL users including readonly --}}
                     <a class="dropdown-item" href="{{ route('portals.export') }}">
                         <i class="fas fa-download"></i> Export to Excel
                     </a>
                 </li>
-                <li>
-                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal">
-                        <i class="fas fa-upload"></i> Import from Excel
-                    </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <a class="dropdown-item" href="{{ route('portals.import-template') }}">
-                        <i class="fas fa-file-csv"></i> Download Template
-                    </a>
-                </li>
+                
+                @if(auth()->user()->canModify())
+                    <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal">
+                            <i class="fas fa-upload"></i> Import from Excel
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{{ route('portals.import-template') }}">
+                            <i class="fas fa-file-csv"></i> Download Template
+                        </a>
+                    </li>
+                @endif
             </ul>
         </div>
     </div>
 </div>
+
 <!-- Filters -->
 <div class="card mb-4">
     <div class="card-body">
@@ -47,14 +55,18 @@
                            placeholder="Search portals..." value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" name="server_id">
-                        <option value="">All Servers</option>
-                        @foreach($servers as $server)
-                            <option value="{{ $server->id }}" {{ request('server_id') == $server->id ? 'selected' : '' }}>
-                                {{ $server->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                   <select class="form-select" name="server_id">
+    <option value="">All Servers</option>
+    @foreach($servers as $server)
+        <option value="{{ $server->id }}" {{ request('server_id') == $server->id ? 'selected' : '' }}>
+            {{ $server->ip }}
+            @if($server->type)
+                ({{ ucfirst($server->type) }})
+            @endif
+        </option>
+    @endforeach
+</select>
+
                 </div>
                 <div class="col-md-2">
                     <select class="form-select" name="status">
@@ -103,7 +115,7 @@
                                 <strong>{{ $portal->name }}</strong>
                             </td>
                             <td>
-                                <span class="badge bg-info">{{ $portal->server->name }}</span>
+                                <span class="badge bg-info">{{ $portal->server->ip }}</span>
                             </td>
                             <td>
                                 <a href="{{ $portal->url }}" target="_blank" class="text-decoration-none">
@@ -134,20 +146,28 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info" title="Check Status">
-                                        <i class="fas fa-sync-alt"></i>
-                                    </button>
-                                    <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary" title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                    {{-- View button - available to ALL users --}}
+                                    <a href="{{ route('portals.show', $portal) }}" class="btn btn-outline-secondary" title="View Details">
+                                        <i class="fas fa-eye"></i>
                                     </a>
-                                    <form action="{{ route('portals.destroy', $portal) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger" title="Delete"
-                                                onclick="return confirm('Are you sure you want to delete this portal?')">
-                                            <i class="fas fa-trash"></i>
+                                    
+                                    {{-- Edit/Delete/Status buttons - ONLY for users who can modify (NOT readonly) --}}
+                                    @if(auth()->user()->canModify())
+                                        <button onclick="checkPortalStatus({{ $portal->id }})" class="btn btn-outline-info" title="Check Status">
+                                            <i class="fas fa-sync-alt"></i>
                                         </button>
-                                    </form>
+                                        <a href="{{ route('portals.edit', $portal) }}" class="btn btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ route('portals.destroy', $portal) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger" title="Delete"
+                                                    onclick="return confirm('Are you sure you want to delete this portal?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -161,15 +181,26 @@
             <div class="text-center py-5">
                 <i class="fas fa-globe fa-3x text-muted mb-3"></i>
                 <h5>No Portals Found</h5>
-                <p class="text-muted">Add your first portal to get started.</p>
-                <a href="{{ route('portals.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add Portal
-                </a>
+                <p class="text-muted">
+                    @if(auth()->user()->isSuperAdmin())
+                        Add your first portal to get started.
+                    @else
+                        No portals have been assigned to you yet.
+                    @endif
+                </p>
+                {{-- Only show Add Portal button to users who can modify (NOT readonly) --}}
+                @if(auth()->user()->canModify())
+                    <a href="{{ route('portals.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Portal
+                    </a>
+                @endif
             </div>
         @endif
     </div>
 </div>
 
+{{-- Import Modal - ONLY show to users who can modify (NOT readonly) --}}
+@if(auth()->user()->canModify())
 <!-- Import Modal -->
 <div class="modal fade" id="importModal" tabindex="-1">
     <div class="modal-dialog">
@@ -192,13 +223,13 @@
                     
                     <div class="alert alert-info">
                         <h6><i class="fas fa-info-circle"></i> Import Guidelines:</h6>
-                       <ul class="mb-0">
-        <li>✅ Portals will be created from your CSV file</li>
-        <li>✅ Status of each portal will be automatically checked</li>
-        <li>✅ Process may take time for more number of portals</li>
-        <li>✅ No need to manually check status after import</li>
-        <li>⚠️ Please wait for the import to complete</li>
-    </ul>
+                        <ul class="mb-0">
+                            <li>✅ Portals will be created from your CSV file</li>
+                            <li>✅ Status of each portal will be automatically checked</li>
+                            <li>✅ Process may take time for more number of portals</li>
+                            <li>✅ No need to manually check status after import</li>
+                            <li>⚠️ Please wait for the import to complete</li>
+                        </ul>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -214,6 +245,7 @@
         </div>
     </div>
 </div>
+@endif
 
 @endsection
 
@@ -257,5 +289,4 @@ function checkAllPortals() {
     });
 }
 </script>
-
 @endsection

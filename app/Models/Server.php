@@ -11,7 +11,6 @@ class Server extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
         'ip',
         'password',
         'type',
@@ -36,4 +35,18 @@ class Server extends Model
             set: fn ($value) => Crypt::encryptString($value),
         );
     }
+    public function assignedUsers()
+{
+    return $this->belongsToMany(User::class, 'user_server_assignments');
+}
+
+public function scopeForUser($query, User $user)
+{
+    if ($user->isSuperAdmin()) {
+        return $query;
+    }
+    return $query->whereHas('assignedUsers', function($q) use ($user) {
+        $q->where('user_id', $user->id);
+    });
+}
 }
