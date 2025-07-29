@@ -94,7 +94,7 @@ class ServerController extends Controller
 
     public function edit(Server $server)
     {
-        if (!auth()->user()->canModify()) {
+        if (!auth()->user()->isSuperAdmin()) {
             abort(403, 'Access denied. You do not have permission to edit servers.');
         }
         
@@ -103,7 +103,7 @@ class ServerController extends Controller
 
     public function update(Request $request, Server $server)
     {
-        if (!auth()->user()->canModify()) {
+        if (!auth()->user()->isSuperAdmin()) {
             abort(403, 'Access denied. You do not have permission to update servers.');
         }
         

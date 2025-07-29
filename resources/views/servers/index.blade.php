@@ -125,7 +125,7 @@
                                         </a>
                                     @endif
                                     
-                                    @if(auth()->user()->canModify())
+                                    @if(auth()->user()->isSuperAdmin())
                                         <a href="{{ route('servers.edit', $server) }}" class="btn btn-outline-primary" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
